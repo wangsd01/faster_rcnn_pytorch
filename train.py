@@ -34,14 +34,25 @@ def log_print(text, color=None, on_color=None, attrs=None):
 # hyper-parameters
 # ------------
 imdb_name = 'voc_2007_trainval'
-cfg_file = 'experiments/cfgs/faster_rcnn_end2end.yml'
 pretrained_model = 'data/pretrained_model/VGG_imagenet.npy'
 output_dir = 'models/saved_model3'
 
-start_step = 0
-end_step = 100000
-lr_decay_steps = {60000, 80000}
-lr_decay = 1./10
+use_resnet = True
+if use_resnet:
+    cfg_file = 'experiments/cfgs/resnet_faster_rcnn_end2end.yml'
+else:
+    cfg_file = 'experiments/cfgs/faster_rcnn_end2end.yml'
+
+if use_resnet:
+    start_step = 0
+    end_step = 160000
+    lr_decay_steps = {120000}
+    lr_decay = 1.0/10
+else:
+    start_step = 0
+    end_step = 100000
+    lr_decay_steps = {60000, 80000}
+    lr_decay = 1./10
 
 rand_seed = 1024
 _DEBUG = True
@@ -99,7 +110,7 @@ if use_tensorboard:
     if remove_all_log:
         cc.remove_all_experiments()
     if exp_name is None:
-        exp_name = datetime.now().strftime('vgg16_%m-%d_%H-%M')
+        exp_name = datetime.now().strftime('resnet50_%m-%d_%H-%M')
         exp = cc.create_experiment(exp_name)
     else:
         exp = cc.open_experiment(exp_name)
