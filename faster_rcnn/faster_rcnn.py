@@ -18,6 +18,7 @@ from network import Conv2d, FC
 # from roi_pooling.modules.roi_pool_py import RoIPool
 from roi_pooling.modules.roi_pool import RoIPool
 from vgg16 import VGG16
+from resnet51 import resnet50
 
 
 def nms_detections(pred_boxes, scores, nms_thresh, inds=None):
@@ -36,8 +37,10 @@ class RPN(nn.Module):
     def __init__(self):
         super(RPN, self).__init__()
 
-        self.features = VGG16(bn=False)
-        self.conv1 = Conv2d(512, 512, 3, same_padding=True)
+        # self.features = VGG16(bn=False)
+        # self.conv1 = Conv2d(512, 512, 3, same_padding=True)
+        self.features = resnet50(pretrained=True)
+        self.conv1 = Conv2d(2048, 512, 3, same_padding=True)
         self.score_conv = Conv2d(512, len(self.anchor_scales) * 3 * 2, 1, relu=False, same_padding=False)
         self.bbox_conv = Conv2d(512, len(self.anchor_scales) * 3 * 4, 1, relu=False, same_padding=False)
 
@@ -191,10 +194,11 @@ class FasterRCNN(nn.Module):
 
         self.rpn = RPN()
         self.roi_pool = RoIPool(7, 7, 1.0/16)
-        self.fc6 = FC(512 * 7 * 7, 4096)
-        self.fc7 = FC(4096, 4096)
-        self.score_fc = FC(4096, self.n_classes, relu=False)
-        self.bbox_fc = FC(4096, self.n_classes * 4, relu=False)
+        # self.fc6 = FC(2048 * 7 * 7, 4096)
+        # self.fc7 = FC(4096, 4096)
+        self.score_fc = FC(2048 * 7 * 7, self.n_classes, relu=False)
+        self.bbox_fc = FC(2048 * 7 * 7, self.n_classes * 4, relu=False)
+
 
         # loss
         self.cross_entropy = None
@@ -221,10 +225,11 @@ class FasterRCNN(nn.Module):
         # roi pool
         pooled_features = self.roi_pool(features, rois)
         x = pooled_features.view(pooled_features.size()[0], -1)
-        x = self.fc6(x)
-        x = F.dropout(x, training=self.training)
-        x = self.fc7(x)
-        x = F.dropout(x, training=self.training)
+        # print x.size()
+        # x = self.fc6(x)
+        # x = F.dropout(x, training=self.training)
+        # x = self.fc7(x)
+        # x = F.dropout(x, training=self.training)
 
         cls_score = self.score_fc(x)
         cls_prob = F.softmax(cls_score)

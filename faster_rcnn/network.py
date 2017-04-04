@@ -51,12 +51,12 @@ def load_net(fname, net):
 
 def load_pretrained_npy(faster_rcnn_model, fname):
     params = np.load(fname).item()
-    # vgg16
+    # vgg16 or resnet
     vgg16_dict = faster_rcnn_model.rpn.features.state_dict()
     for name, val in vgg16_dict.items():
-        # # print name
-        # # print val.size()
-        # # print param.size()
+        print name
+        print val.size()
+        print param.size()
         if name.find('bn.') >= 0:
             continue
         i, j = int(name[4]), int(name[6]) + 1
@@ -80,6 +80,18 @@ def load_pretrained_npy(faster_rcnn_model, fname):
         key = '{}.bias'.format(k)
         param = torch.from_numpy(params[v]['biases'])
         frcnn_dict[key].copy_(param)
+
+def init_fc6_7(faster_rcnn_model):
+    # fc6 fc7
+    frcnn_dict = faster_rcnn_model.state_dict()
+    pairs = {'fc6.fc': 'fc6', 'fc7.fc': 'fc7'}
+    for k, v in pairs.items():
+        key = '{}.weight'.format(k)
+        frcnn_dict[key].data.normal_(0.0, 0.02)
+
+        key = '{}.bias'.format(k)
+        param = torch.from_numpy(params[v]['biases'])
+        frcnn_dict[key].data.normal_(0.0, 0.02)
 
 
 def np_to_variable(x, is_cuda=True, dtype=torch.FloatTensor):
@@ -109,10 +121,24 @@ def weights_normal_init(model, dev=0.01):
 def clip_gradient(model, clip_norm):
     """Computes a gradient clipping coefficient based on gradient norm."""
     totalnorm = 0
+    # print(len(list(model.parameters())))
+    # paras = list(model.parameters())
+    i = 1
     for p in model.parameters():
+        # print i
+        i = i + 1
+        # print i
+        # print(name)
+        # print(p.size())
         if p.requires_grad:
-            modulenorm = p.grad.data.norm()
-            totalnorm += modulenorm ** 2
+            # print ("require grad")
+            # if type(p.grad) == 'Nonetype':
+            #     print ("type is none")
+            # else:
+                # print(p.size())
+                modulenorm = p.grad.data.norm()
+                totalnorm += modulenorm ** 2
+        # print("==================")
     totalnorm = np.sqrt(totalnorm)
 
     norm = clip_norm / max(totalnorm, clip_norm)

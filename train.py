@@ -71,7 +71,9 @@ data_layer = RoIDataLayer(roidb, imdb.num_classes)
 # load net
 net = FasterRCNN(classes=imdb.classes, debug=_DEBUG)
 network.weights_normal_init(net, dev=0.01)
-network.load_pretrained_npy(net, pretrained_model)
+# network.init_fc6_7(net)
+# network.load_pretrained_npy(net, pretrained_model)
+
 # model_file = '/media/longc/Data/models/VGGnet_fast_rcnn_iter_70000.h5'
 # model_file = 'models/saved_model3/faster_rcnn_60000.h5'
 # network.load_net(model_file, net)
@@ -123,6 +125,8 @@ for step in range(start_step, end_step+1):
     net(im_data, im_info, gt_boxes, gt_ishard, dontcare_areas)
     loss = net.loss + net.rpn.loss
 
+    # print "loss", loss
+
     if _DEBUG:
         tp += float(net.tp)
         tf += float(net.tf)
@@ -135,6 +139,8 @@ for step in range(start_step, end_step+1):
     # backward
     optimizer.zero_grad()
     loss.backward()
+
+
     network.clip_gradient(net, 10.)
     optimizer.step()
 
