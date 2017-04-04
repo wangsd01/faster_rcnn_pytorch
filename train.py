@@ -46,7 +46,7 @@ else:
 if use_resnet:
     start_step = 0
     end_step = 160000
-    lr_decay_steps = {120000}
+    lr_decay_steps = {4000, 8000, 12000, 16000, 20000, 120000}
     lr_decay = 1.0/10
 else:
     start_step = 0
@@ -67,7 +67,7 @@ if rand_seed is not None:
 
 # load config
 cfg_from_file(cfg_file)
-lr = cfg.TRAIN.LEARNING_RATE
+lr = 0.002 #cfg.TRAIN.LEARNING_RATE
 momentum = cfg.TRAIN.MOMENTUM
 weight_decay = cfg.TRAIN.WEIGHT_DECAY
 disp_interval = cfg.TRAIN.DISPLAY
@@ -82,8 +82,10 @@ data_layer = RoIDataLayer(roidb, imdb.num_classes)
 # load net
 net = FasterRCNN(classes=imdb.classes, debug=_DEBUG)
 network.weights_normal_init(net, dev=0.01)
-# network.init_fc6_7(net)
-# network.load_pretrained_npy(net, pretrained_model)
+
+snap_shot_model = "models/saved_model3/resnet_faster_rcnn_10000.h5"
+network.load_net(snap_shot_model, net)
+# network.load_pretrained_npy(net, pretrained_model, backbone="RESNET")
 
 # model_file = '/media/longc/Data/models/VGGnet_fast_rcnn_iter_70000.h5'
 # model_file = 'models/saved_model3/faster_rcnn_60000.h5'
@@ -183,7 +185,7 @@ for step in range(start_step, end_step+1):
                       'rcnn_box': float(net.loss_box.data.cpu().numpy()[0])}
             exp.add_scalar_dict(losses, step=step)
 
-    if (step % 10000 == 0) and step > 0:
+    if (step % cfg.TRAIN.SNAPSHOT_ITERS == 0) and step > 0:
         save_name = os.path.join(output_dir, 'faster_rcnn_{}.h5'.format(step))
         network.save_net(save_name, net)
         print('save model: {}'.format(save_name))
