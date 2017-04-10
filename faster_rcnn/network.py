@@ -46,6 +46,7 @@ def load_net(fname, net):
     h5f = h5py.File(fname, mode='r')
     for k, v in net.state_dict().items():
         param = torch.from_numpy(np.asarray(h5f[k]))
+        print k
         v.copy_(param)
 
 
@@ -57,7 +58,6 @@ def load_pretrained_npy(faster_rcnn_model, fname, backbone=None):
         for name, val in vgg16_dict.items():
             print name
             print val.size()
-            print param.size()
             if name.find('bn.') >= 0:
                 continue
             i, j = int(name[4]), int(name[6]) + 1

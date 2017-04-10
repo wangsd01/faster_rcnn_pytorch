@@ -18,8 +18,8 @@ from faster_rcnn.fast_rcnn.config import cfg, cfg_from_file, get_output_dir
 # ------------
 imdb_name = 'voc_2007_test'
 cfg_file = 'experiments/cfgs/faster_rcnn_end2end.yml'
-# trained_model = '/media/longc/Data/models/VGGnet_fast_rcnn_iter_70000.h5'
-trained_model = 'models/saved_model3/faster_rcnn_100000.h5'
+trained_model = 'models/VGGnet_fast_rcnn_iter_70000.h5'
+# trained_model = 'models/saved_model3/faster_rcnn_100000.h5'
 
 rand_seed = 1024
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     imdb.competition_mode(on=True)
 
     # load net
-    net = FasterRCNN(classes=imdb.classes, debug=False)
+    net = FasterRCNN(classes=imdb.classes, debug=False, backbone='VGG')
     network.load_net(trained_model, net)
     print('load model successfully!')
 

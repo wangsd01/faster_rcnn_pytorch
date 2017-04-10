@@ -34,13 +34,16 @@ class RPN(nn.Module):
     _feat_stride = [16, ]
     anchor_scales = [8, 16, 32]
 
-    def __init__(self):
+    def __init__(self, backbone='VGG'):
         super(RPN, self).__init__()
 
-        # self.features = VGG16(bn=False)
-        # self.conv1 = Conv2d(512, 512, 3, same_padding=True)
-        self.features = resnet50(pretrained=True)
-        self.conv1 = Conv2d(2048, 512, 3, same_padding=True)
+        self._backbone=backbone
+        if self._backbone == 'VGG':
+            self.features = VGG16(bn=False)
+            self.conv1 = Conv2d(512, 512, 3, same_padding=True)
+        elif self._backbone == 'RESNET':
+            self.features = resnet50(pretrained=True)
+            self.conv1 = Conv2d(2048, 512, 3, same_padding=True)
         self.score_conv = Conv2d(512, len(self.anchor_scales) * 3 * 2, 1, relu=False, same_padding=False)
         self.bbox_conv = Conv2d(512, len(self.anchor_scales) * 3 * 4, 1, relu=False, same_padding=False)
 
@@ -185,19 +188,24 @@ class FasterRCNN(nn.Module):
     SCALES = (600,)
     MAX_SIZE = 1000
 
-    def __init__(self, classes=None, debug=False):
+    def __init__(self, classes=None, debug=False, backbone='VGG'):
         super(FasterRCNN, self).__init__()
 
         if classes is not None:
             self.classes = classes
             self.n_classes = len(classes)
 
-        self.rpn = RPN()
+        self.rpn = RPN(backbone=backbone)
         self.roi_pool = RoIPool(7, 7, 1.0/16)
-        # self.fc6 = FC(2048 * 7 * 7, 4096)
-        # self.fc7 = FC(4096, 4096)
-        self.score_fc = FC(2048 * 7 * 7, self.n_classes, relu=False)
-        self.bbox_fc = FC(2048 * 7 * 7, self.n_classes * 4, relu=False)
+        self._backbone = backbone
+        if backbone == 'VGG':
+            self.fc6 = FC(512 * 7 * 7, 4096)
+            self.fc7 = FC(4096, 4096)
+            self.score_fc = FC(4096, self.n_classes, relu=False)
+            self.bbox_fc = FC(4096, self.n_classes * 4, relu=False)
+        elif backbone == "RESNET":
+            self.score_fc = FC(2048 * 7 * 7, self.n_classes, relu=False)
+            self.bbox_fc = FC(2048 * 7 * 7, self.n_classes * 4, relu=False)
 
 
         # loss
@@ -226,10 +234,11 @@ class FasterRCNN(nn.Module):
         pooled_features = self.roi_pool(features, rois)
         x = pooled_features.view(pooled_features.size()[0], -1)
         # print x.size()
-        # x = self.fc6(x)
-        # x = F.dropout(x, training=self.training)
-        # x = self.fc7(x)
-        # x = F.dropout(x, training=self.training)
+        if self._backbone == 'VGG':
+            x = self.fc6(x)
+            x = F.dropout(x, training=self.training)
+            x = self.fc7(x)
+            x = F.dropout(x, training=self.training)
 
         cls_score = self.score_fc(x)
         cls_prob = F.softmax(cls_score)

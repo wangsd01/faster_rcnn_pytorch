@@ -37,13 +37,14 @@ imdb_name = 'voc_2007_trainval'
 pretrained_model = 'data/pretrained_model/VGG_imagenet.npy'
 output_dir = 'models/saved_model3'
 
-use_resnet = True
-if use_resnet:
+backbone="VGG"
+
+if backbone=='RESNET':
     cfg_file = 'experiments/cfgs/resnet_faster_rcnn_end2end.yml'
 else:
     cfg_file = 'experiments/cfgs/faster_rcnn_end2end.yml'
 
-if use_resnet:
+if backbone=='RESNET':
     start_step = 0
     end_step = 160000
     lr_decay_steps = {4000, 8000, 12000, 16000, 20000, 120000}
@@ -67,7 +68,7 @@ if rand_seed is not None:
 
 # load config
 cfg_from_file(cfg_file)
-lr = 0.002 #cfg.TRAIN.LEARNING_RATE
+lr = cfg.TRAIN.LEARNING_RATE
 momentum = cfg.TRAIN.MOMENTUM
 weight_decay = cfg.TRAIN.WEIGHT_DECAY
 disp_interval = cfg.TRAIN.DISPLAY
@@ -84,8 +85,8 @@ net = FasterRCNN(classes=imdb.classes, debug=_DEBUG)
 network.weights_normal_init(net, dev=0.01)
 
 snap_shot_model = "models/saved_model3/resnet_faster_rcnn_10000.h5"
-network.load_net(snap_shot_model, net)
-# network.load_pretrained_npy(net, pretrained_model, backbone="RESNET")
+# network.load_net(snap_shot_model, net)
+network.load_pretrained_npy(net, pretrained_model, backbone=backbone)
 
 # model_file = '/media/longc/Data/models/VGGnet_fast_rcnn_iter_70000.h5'
 # model_file = 'models/saved_model3/faster_rcnn_60000.h5'
@@ -112,7 +113,7 @@ if use_tensorboard:
     if remove_all_log:
         cc.remove_all_experiments()
     if exp_name is None:
-        exp_name = datetime.now().strftime('resnet50_%m-%d_%H-%M')
+        exp_name = datetime.now().strftime('VGG_%m-%d_%H-%M')
         exp = cc.create_experiment(exp_name)
     else:
         exp = cc.open_experiment(exp_name)
