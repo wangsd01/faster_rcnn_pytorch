@@ -46,8 +46,8 @@ else:
 
 if backbone=='RESNET':
     start_step = 0
-    end_step = 160000
-    lr_decay_steps = {4000, 8000, 12000, 16000, 20000, 120000}
+    end_step = 100000
+    lr_decay_steps = {60000, 80000}
     lr_decay = 1.0/10
 else:
     start_step = 0
@@ -113,7 +113,7 @@ if use_tensorboard:
     if remove_all_log:
         cc.remove_all_experiments()
     if exp_name is None:
-        exp_name = datetime.now().strftime('VGG_%m-%d_%H-%M')
+        exp_name = datetime.now().strftime(backbone + '_%m-%d_%H-%M')
         exp = cc.create_experiment(exp_name)
     else:
         exp = cc.open_experiment(exp_name)

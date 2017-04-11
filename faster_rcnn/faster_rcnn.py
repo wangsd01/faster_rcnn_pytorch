@@ -18,7 +18,7 @@ from network import Conv2d, FC
 # from roi_pooling.modules.roi_pool_py import RoIPool
 from roi_pooling.modules.roi_pool import RoIPool
 from vgg16 import VGG16
-from resnet51 import resnet50
+from resnet51 import resnet50, ResNet, Bottleneck
 
 
 def nms_detections(pred_boxes, scores, nms_thresh, inds=None):
@@ -43,7 +43,7 @@ class RPN(nn.Module):
             self.conv1 = Conv2d(512, 512, 3, same_padding=True)
         elif self._backbone == 'RESNET':
             self.features = resnet50(pretrained=True)
-            self.conv1 = Conv2d(2048, 512, 3, same_padding=True)
+            self.conv1 = Conv2d(1024, 512, 3, same_padding=True)
         self.score_conv = Conv2d(512, len(self.anchor_scales) * 3 * 2, 1, relu=False, same_padding=False)
         self.bbox_conv = Conv2d(512, len(self.anchor_scales) * 3 * 4, 1, relu=False, same_padding=False)
 
@@ -204,6 +204,7 @@ class FasterRCNN(nn.Module):
             self.score_fc = FC(4096, self.n_classes, relu=False)
             self.bbox_fc = FC(4096, self.n_classes * 4, relu=False)
         elif backbone == "RESNET":
+            self.layer4 = ResNet._make_layer(Bottleneck, 512, 3, stride=2)
             self.score_fc = FC(2048 * 7 * 7, self.n_classes, relu=False)
             self.bbox_fc = FC(2048 * 7 * 7, self.n_classes * 4, relu=False)
 
@@ -239,6 +240,8 @@ class FasterRCNN(nn.Module):
             x = F.dropout(x, training=self.training)
             x = self.fc7(x)
             x = F.dropout(x, training=self.training)
+        elif self._backbone == 'RESNET':
+            x= self.layer4(x)
 
         cls_score = self.score_fc(x)
         cls_prob = F.softmax(cls_score)
